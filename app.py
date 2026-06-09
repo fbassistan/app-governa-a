@@ -4,128 +4,142 @@ from datetime import datetime
 import urllib.request
 import json
 import time
-import os
 
-st.set_page_config(page_title="Ciclo de Limpeza - Hotel", page_icon="🧹", layout="centered")
+st.set_page_config(page_title="Ciclo de Limpeza - Hotel", page_icon="🧹", layout="wide")
 
 # ➔ SUA URL DO APP DA WEB DO GOOGLE SCRIPTS (Terminada em /exec)
 URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzcNped3ftP-9FkLcWC-u65kl0RlX-rW2Z_8AHLGKgrw2ETjkoKJI2CHqisiSQnoUUb/exec"
 
 # Configurações fixas do Hotel
-SUITES = [f"B{i}" for i in range(11, 28)]  # Gera a lista de B11 até B27
+SUITES = [f"B{i}" for i in range(11, 28)]  # Gera de B11 até B27
 SITUACOES = ["Vaga", "Ocupada", "IN", "Out", "Abert"]
 
-# Inicialização do estado da aplicação
+# Inicialização do estado da aplicação com o NOVO MODELO de colunas
+COLUNAS_MODELO = ["DATA", "SUITE", "VAGA", "OCUP", "IN", "OUT", "ABER", "INICIO", "TERMINO", "TOTAL", "COLABORADOR", "OBSERVAÇÕES"]
+
 if 'limpezas_df' not in st.session_state:
-    st.session_state.limpezas_df = pd.DataFrame(columns=[
-        "Data", "Suite", "Hora_Entrada", "Hora_Saida", "Situacao", "Colaborador", "Observacao"
-    ])
+    st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
 
 if 'reset_counter' not in st.session_state:
     st.session_state.reset_counter = 0
 
 st.title("🧹 Monitoramento do Ciclo de Limpeza")
-st.write("Utilize este aplicativo para registrar o progresso e status de limpeza das suítes.")
+st.write("Insira as informações abaixo. O sistema organizará os dados e calculará o tempo total automaticamente.")
 
 # Identificação do Colaborador
 nome_colaborador = st.text_input("Nome do Colaborador / Camareira:", placeholder="Ex: Maria Silva")
 
 st.write("---")
-st.write("### 🛏️ Registrar Limpeza")
+st.write("### 🛏️ Registrar Nova Limpeza")
 
-# Organização dos campos em colunas para facilitar o preenchimento no celular/tablet
-col1, col2 = st.columns(2)
+# Layout em colunas para preenchimento rápido
+col1, col2, col3 = st.columns(3)
 
 with col1:
     suite_selecionada = st.selectbox("Selecione a Suíte:", SUITES, key=f"suite_{st.session_state.reset_counter}")
-    situacao_selecionada = st.selectbox("Situação da Suíte:", SITUACOES, key=f"situacao_{st.session_state.reset_counter}")
-    data_selecionada = st.date_input("Data da Limpeza:", datetime.now(), key=f"data_{st.session_state.reset_counter}")
+    situacao_selecionada = st.selectbox("Situação atual:", SITUACOES, key=f"situacao_{st.session_state.reset_counter}")
 
 with col2:
-    # Captura o horário atual por padrão para facilitar o preenchimento
-    hora_entrada = st.time_input("Hora de Entrada:", value=datetime.now().time(), key=f"entrada_{st.session_state.reset_counter}")
-    hora_saida = st.time_input("Hora de Saída:", value=datetime.now().time(), key=f"saida_{st.session_state.reset_counter}")
+    data_selecionada = st.date_input("Data:", datetime.now(), key=f"data_{st.session_state.reset_counter}")
+    observacao = st.text_input("Observações (Opcional):", placeholder="Ex: Troca de enxoval...", key=f"obs_{st.session_state.reset_counter}")
 
-observacao = st.text_input("Observações (Opcional):", placeholder="Ex: Troca de enxoval completa, frigobar abastecido...", key=f"obs_{st.session_state.reset_counter}")
+with col3:
+    hora_entrada = st.time_input("Hora de Início:", value=datetime.now().time(), key=f"entrada_{st.session_state.reset_counter}")
+    hora_saida = st.time_input("Hora de Término:", value=datetime.now().time(), key=f"saida_{st.session_state.reset_counter}")
 
 # Botão para adicionar à lista local
-if st.button("➕ Adicionar Registro à Lista", use_container_width=True):
+if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
     if nome_colaborador.strip() == "":
-        st.error("Por favor, preencha o **Nome do Colaborador** antes de adicionar.")
+        st.error("Por favor, preencha o **Nome do Colaborador** antes de continuar.")
     else:
+        # 1. Cálculo Automático do Tempo Total (Diferença entre Término e Início)
+        fmt = '%H:%M'
+        t_inicio = datetime.strptime(hora_entrada.strftime(fmt), fmt)
+        t_termino = datetime.strptime(hora_saida.strftime(fmt), fmt)
+        
+        delta = t_termino - t_inicio
+        segundos_totais = int(delta.total_seconds())
+        
+        # Caso a limpeza vire a meia-noite (ajuste de dia)
+        if segundos_totais < 0:
+            segundos_totais += 24 * 3600
+            
+        horas, resto = divmod(segundos_totais, 3600)
+        minutos, _ = divmod(resto, 60)
+        tempo_total_str = f"{horas:02d}:{minutos:02d}"
+        
+        # 2. Separação da Situação nas colunas específicas do seu modelo (X na coluna escolhida)
+        vaga, ocup, col_in, col_out, aber = "", "", "", "", ""
+        if situacao_selecionada == "Vaga": vaga = "X"
+        elif situacao_selecionada == "Ocupada": ocup = "X"
+        elif situacao_selecionada == "IN": col_in = "X"
+        elif situacao_selecionada == "Out": col_out = "X"
+        elif situacao_selecionada == "Abert": aber = "X"
+        
         texto_obs = observacao.strip() if observacao.strip() != "" else "-"
         
-        # Cria a linha com os dados formatados
+        # Criando o novo registro estruturado exatamente como o modelo solicitado
         novo_registro = pd.DataFrame([{
-            "Data": data_selecionada.strftime("%d/%m/%Y"),
-            "Suite": suite_selecionada,
-            "Hora_Entrada": hora_entrada.strftime("%H:%M"),
-            "Hora_Saida": hora_saida.strftime("%H:%M"),
-            "Situacao": situacao_selecionada,
-            "Colaborador": nome_colaborador.strip().upper(),
-            "Observacao": texto_obs
+            "DATA": data_selecionada.strftime("%d/%m/%Y"),
+            "SUITE": suite_selecionada,
+            "VAGA": vaga,
+            "OCUP": ocup,
+            "IN": col_in,
+            "OUT": col_out,
+            "ABER": aber,
+            "INICIO": hora_entrada.strftime("%H:%M"),
+            "TERMINO": hora_saida.strftime("%H:%M"),
+            "TOTAL": tempo_total_str,
+            "COLABORADOR": nome_colaborador.strip().upper(),
+            "OBSERVAÇÕES": texto_obs
         }])
         
-        # Junta ao DataFrame existente
+        # Acumula no estado da sessão
         st.session_state.limpezas_df = pd.concat([st.session_state.limpezas_df, novo_registro], ignore_index=True)
-        st.success(f"Suíte {suite_selecionada} adicionada com sucesso à lista!")
+        st.success(f"Suíte {suite_selecionada} adicionada temporariamente!")
         
-        # Reseta os campos incrementando o contador
+        # Atualiza a tela limpando os campos
         st.session_state.reset_counter += 1
-        time.sleep(0.5)
+        time.sleep(0.4)
         st.rerun()
 
-# Se existirem itens na lista, mostra a tabela de edição e o botão de envio definitivo
+# Se houver dados na lista, mostra o gerenciador e botão de envio definitivo
 if not st.session_state.limpezas_df.empty:
     st.write("---")
-    st.write("### 📋 Limpezas prontas para envio")
-    st.caption("💡 Caso necessário, você pode dar dois cliques em qualquer célula abaixo para corrigir a informação antes de enviar.")
+    st.write("### 📋 Registros prontos para serem salvos na Planilha")
     
-    # Editor de dados interativo do Streamlit
     st.session_state.limpezas_df = st.data_editor(
         st.session_state.limpezas_df,
-        column_config={
-            "Data": st.column_config.TextColumn("Data", disabled=True),
-            "Suite": st.column_config.SelectboxColumn("Suíte", options=SUITES),
-            "Hora_Entrada": st.column_config.TextColumn("H. Entrada"),
-            "Hora_Saida": st.column_config.TextColumn("H. Saída"),
-            "Situacao": st.column_config.SelectboxColumn("Situação", options=SITUACOES),
-            "Colaborador": st.column_config.TextColumn("Colaborador"),
-            "Observacao": st.column_config.TextColumn("Observações")
-        },
-        use_container_width=True, num_rows="dynamic"
+        use_container_width=True,
+        num_rows="dynamic"
     )
     
-    col_btn1, col_btn2 = st.columns([1, 2])
+    col_btn1, col_btn2 = st.columns([1, 3])
     with col_btn1:
-        if st.button("🗑️ Limpar Lista", type="secondary", use_container_width=True):
-            st.session_state.limpezas_df = pd.DataFrame(columns=["Data", "Suite", "Hora_Entrada", "Hora_Saida", "Situacao", "Colaborador", "Observacao"])
+        if st.button("🗑️ Limpar Tudo", type="secondary", use_container_width=True):
+            st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
             st.rerun()
             
     with col_btn2:
-        if st.button("🚀 ENVIAR PARA A PLANILHA", type="primary", use_container_width=True):
-            with st.spinner("Transmitindo dados para a central..."):
+        if st.button("🚀 SALVAR DADOS NA PLANILHA GOOGLE", type="primary", use_container_width=True):
+            with st.spinner("Enviando dados..."):
                 try:
-                    # Transforma a tabela em lista de dicionários (JSON)
                     lista_dados = st.session_state.limpezas_df.to_dict(orient='records')
                     
-                    # Prepara a requisição HTTP POST
                     req = urllib.request.Request(URL_WEB_APP, method="POST")
                     req.add_header('Content-Type', 'application/json')
                     payload = json.dumps(lista_dados).encode('utf-8')
                     
-                    # Envia os dados
                     with urllib.request.urlopen(req, data=payload) as response:
                         resultado = response.read().decode('utf-8')
                     
                     if "Error" in resultado:
-                        st.error(f"Erro reportado pelo Google Sheets: {resultado}")
+                        st.error(f"Erro na Planilha: {resultado}")
                     else:
                         st.balloons()
-                        st.success("🎉 Dados de limpeza registrados com sucesso no banco de dados!")
-                        # Limpa a tabela após o sucesso
-                        st.session_state.limpezas_df = pd.DataFrame(columns=["Data", "Suite", "Hora_Entrada", "Hora_Saida", "Situacao", "Colaborador", "Observacao"])
+                        st.success("🎉 Ciclo de limpeza registrado com sucesso na planilha oficial!")
+                        st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
                         time.sleep(2)
                         st.rerun()
                 except Exception as e:
-                    st.error(f"Falha na conexão com o servidor: {e}")
+                    st.error(f"Erro de conexão: {e}")
