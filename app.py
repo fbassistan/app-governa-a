@@ -8,7 +8,7 @@ import time
 st.set_page_config(page_title="Ciclo de Limpeza - Hotel", page_icon="🧹", layout="wide")
 
 # ➔ SUA URL DO APP DA WEB DO GOOGLE SCRIPTS (Terminada em /exec)
-URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzcNped3ftP-9FkLcWC-u65kl0RlX-rW2Z_8AHLGKgrw2ETjkoKJI2CHqisiSQnoUUb/exec"
+URL_WEB_APP = "https://script.google.com/macros/s/AKfycbxtiREdyIV5xQ0HY0AE34I_yOY6j08r5-opzawg11pUzLC_VNPXzaVTst55nCktJ1SF/exec"
 
 # Configurações fixas do Hotel
 SUITES = [f"B{i}" for i in range(11, 28)]  # Gera de B11 até B27
