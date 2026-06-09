@@ -4,6 +4,8 @@ from datetime import datetime
 import urllib.request
 import json
 import time
+import os
+import re
 
 st.set_page_config(page_title="Ciclo de Limpeza - Hotel", page_icon="🧹", layout="wide")
 
@@ -11,30 +13,51 @@ st.set_page_config(page_title="Ciclo de Limpeza - Hotel", page_icon="🧹", layo
 URL_WEB_APP = "https://script.google.com/macros/s/AKfycbxtiREdyIV5xQ0HY0AE34I_yOY6j08r5-opzawg11pUzLC_VNPXzaVTst55nCktJ1SF/exec"
 
 # Configurações fixas do Hotel
-SUITES = [f"B{i}" for i in range(11, 28)]  # Gera de B11 até B27
+SUITES = [f"B{i}" for i in range(11, 28)]
 SITUACOES = ["Vaga", "Ocupada", "IN", "Out", "Abert"]
-
-# Inicialização do estado da aplicação com o NOVO MODELO de colunas
 COLUNAS_MODELO = ["DATA", "SUITE", "VAGA", "OCUP", "IN", "OUT", "ABER", "INICIO", "TERMINO", "TOTAL", "COLABORADOR", "OBSERVAÇÕES"]
 
+# Inicialização das variáveis de controle na sessão
 if 'limpezas_df' not in st.session_state:
     st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
+
+if 'usuario_anterior' not in st.session_state:
+    st.session_state.usuario_anterior = ""
 
 if 'reset_counter' not in st.session_state:
     st.session_state.reset_counter = 0
 
-st.title("🧹 Monitoramento do Ciclo de Limpeza")
-st.write("Insira as informações abaixo. O sistema organizará os dados e calculará o tempo total automaticamente.")
+# Função para transformar o nome em um nome de arquivo seguro (ex: "Maria Silva" -> "rascunho_maria_silva.json")
+def gerar_nome_arquivo(nome):
+    nome_limpo = re.sub(r'[^a-zA-Z0-9]', '_', nome.strip().lower())
+    return f"rascunho_{nome_limpo}.json"
 
-# Identificação do Colaborador
+st.title("🧹 Monitoramento do Ciclo de Limpeza")
+st.write("Os dados são salvos automaticamente. Se o celular desligar, basta digitar seu nome novamente para recuperar.")
+
+# 1. IDENTIFICAÇÃO DO COLABORADOR (Gatilho para recuperar o rascunho)
 nome_colaborador = st.text_input("Nome do Colaborador / Camareira:", placeholder="Ex: Maria Silva")
+
+arquivo_rascunho = None
+if nome_colaborador.strip():
+    arquivo_rascunho = gerar_nome_arquivo(nome_colaborador)
+    
+    # Se o nome mudou ou acabou de ser digitado, verifica se existe rascunho salvo no servidor
+    if st.session_state.usuario_anterior != nome_colaborador.strip():
+        if os.path.exists(arquivo_rascunho):
+            try:
+                with open(arquivo_rascunho, "r", encoding="utf-8") as f:
+                    dados_salvos = json.load(f)
+                st.session_state.limpezas_df = pd.DataFrame(dados_salvos)
+                st.toast(f"🔄 Rascunho de {nome_colaborador} recuperado com sucesso!", icon="💾")
+            except Exception as e:
+                pass
+        st.session_state.usuario_anterior = nome_colaborador.strip()
 
 st.write("---")
 st.write("### 🛏️ Registrar Nova Limpeza")
 
-# Layout em colunas para preenchimento rápido
 col1, col2, col3 = st.columns(3)
-
 with col1:
     suite_selecionada = st.selectbox("Selecione a Suíte:", SUITES, key=f"suite_{st.session_state.reset_counter}")
     situacao_selecionada = st.selectbox("Situação atual:", SITUACOES, key=f"situacao_{st.session_state.reset_counter}")
@@ -52,15 +75,13 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
     if nome_colaborador.strip() == "":
         st.error("Por favor, preencha o **Nome do Colaborador** antes de continuar.")
     else:
-        # 1. Cálculo Automático do Tempo Total (Diferença entre Término e Início)
+        # Cálculo Automático do Tempo Total
         fmt = '%H:%M'
         t_inicio = datetime.strptime(hora_entrada.strftime(fmt), fmt)
         t_termino = datetime.strptime(hora_saida.strftime(fmt), fmt)
         
         delta = t_termino - t_inicio
         segundos_totais = int(delta.total_seconds())
-        
-        # Caso a limpeza vire a meia-noite (ajuste de dia)
         if segundos_totais < 0:
             segundos_totais += 24 * 3600
             
@@ -68,7 +89,7 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
         minutos, _ = divmod(resto, 60)
         tempo_total_str = f"{horas:02d}:{minutos:02d}"
         
-        # 2. Separação da Situação nas colunas específicas do seu modelo (X na coluna escolhida)
+        # Separação da Situação nas colunas exclusivas
         vaga, ocup, col_in, col_out, aber = "", "", "", "", ""
         if situacao_selecionada == "Vaga": vaga = "X"
         elif situacao_selecionada == "Ocupada": ocup = "X"
@@ -78,7 +99,6 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
         
         texto_obs = observacao.strip() if observacao.strip() != "" else "-"
         
-        # Criando o novo registro estruturado exatamente como o modelo solicitado
         novo_registro = pd.DataFrame([{
             "DATA": data_selecionada.strftime("%d/%m/%Y"),
             "SUITE": suite_selecionada,
@@ -94,30 +114,41 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
             "OBSERVAÇÕES": texto_obs
         }])
         
-        # Acumula no estado da sessão
         st.session_state.limpezas_df = pd.concat([st.session_state.limpezas_df, novo_registro], ignore_index=True)
-        st.success(f"Suíte {suite_selecionada} adicionada temporariamente!")
         
-        # Atualiza a tela limpando os campos
+        # 💾 SALVAMENTO COMPORTAMENTAL DO RASCUNHO NO SERVIDOR
+        if arquivo_rascunho:
+            with open(arquivo_rascunho, "w", encoding="utf-8") as f:
+                json.dump(st.session_state.limpezas_df.to_dict(orient='records'), f, ensure_ascii=False, indent=2)
+        
+        st.success(f"Suíte {suite_selecionada} adicionada temporariamente e salva no rascunho!")
         st.session_state.reset_counter += 1
         time.sleep(0.4)
         st.rerun()
 
-# Se houver dados na lista, mostra o gerenciador e botão de envio definitivo
+# Se houver dados na lista, mostra a tabela de conferência
 if not st.session_state.limpezas_df.empty:
     st.write("---")
     st.write("### 📋 Registros prontos para serem salvos na Planilha")
     
+    # Permite edição de última hora caso tenham digitado algo errado
     st.session_state.limpezas_df = st.data_editor(
         st.session_state.limpezas_df,
         use_container_width=True,
         num_rows="dynamic"
     )
     
+    # Atualiza o rascunho caso o usuário altere algo direto na tabela editável
+    if arquivo_rascunho and not st.session_state.limpezas_df.empty:
+        with open(arquivo_rascunho, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.limpezas_df.to_dict(orient='records'), f, ensure_ascii=False, indent=2)
+
     col_btn1, col_btn2 = st.columns([1, 3])
     with col_btn1:
         if st.button("🗑️ Limpar Tudo", type="secondary", use_container_width=True):
             st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
+            if arquivo_rascunho and os.path.exists(arquivo_rascunho):
+                os.remove(arquivo_rascunho)
             st.rerun()
             
     with col_btn2:
@@ -138,8 +169,13 @@ if not st.session_state.limpezas_df.empty:
                     else:
                         st.balloons()
                         st.success("🎉 Ciclo de limpeza registrado com sucesso na planilha oficial!")
+                        
+                        # Apaga o arquivo de rascunho local já que foi enviado com sucesso para o Google Sheets
+                        if arquivo_rascunho and os.path.exists(arquivo_rascunho):
+                            os.remove(arquivo_rascunho)
+                            
                         st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
                         time.sleep(2)
                         st.rerun()
                 except Exception as e:
-                    st.error(f"Erro de conexão: {e}")
+                    st.error(f"Erro de conexão: {e}. Seus dados continuam salvos no celular, tente enviar novamente quando o sinal melhorar.")
