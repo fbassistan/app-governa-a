@@ -18,66 +18,55 @@ URL_WEB_APP = "https://script.google.com/macros/s/AKfycbxtiREdyIV5xQ0HY0AE34I_yO
 URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcgGnpVEm56JhjQWztWcdAR6Q&s" # Opcional: Cole o link da logo do seu hotel aqui (PNG transparente de preferência)
 # ==============================================================================
 
-# Injeção de CSS Customizado - Paleta de Cores Oficial "The Barracuda"
-css_customizado = f"""
+# ==============================================================================
+# CSS DEFINITIVO - ESTILO THE BARRACUDA (Areia & Verde)
+# ==============================================================================
+css_barracuda = f"""
 <style>
-    /* Fundo do aplicativo com uma película suave que remete à areia natural e linho */
+    /* 1. FUNDO GERAL (Linen/Sand) - Removemos a imagem e deixamos liso e limpo */
     .stApp {{
-        
-        background-attachment: fixed;
-        background-size: cover;
-        background-position: center;
-        background-color: #F5F2EB; /* Cor de segurança caso a foto demore a carregar */
+        background-color: #FAF9F5 !important;
+        background-image: none !important;
     }}
     
-    /* Blocos de Dados: Minimalismo Sofisticado (Fundo Off-White firme com friso lateral) */
+    /* 2. REMOVE AS CAIXAS EM BRANCO (Deixa a interface flat) */
     div[data-testid="stBlock"], .stMarkdown, div[data-testid="stForm"], div[data-testid="stExpander"] {{
-        background-color: #FAF9F5 !important; /* Tom Areia Suave */
-        padding: 24px !important;
-        border-radius: 6px !important;
-        border-left: 5px solid #23493A !important; /* Friso elegante em Verde Barracuda na lateral */
-        box-shadow: 0px 6px 20px rgba(35, 73, 58, 0.08) !important;
-        margin-bottom: 18px !important;
+        background-color: transparent !important;
+        padding: 10px !important;
+        border-radius: 0px !important;
+        box-shadow: none !important;
+        border: none !important;
+        margin-bottom: 0px !important;
     }}
     
-    /* Títulos Principais: Verde Profundo da Mata Atlântica */
-    h1, h2, h3, h4 {{
-        color: #1A372B !important; 
-        font-family: 'Helvetica Neue', Arial, sans-serif;
-        font-weight: 600 !important;
-        letter-spacing: -0.5px;
+    /* 3. CORES DOS TEXTOS (Verde Barracuda) */
+    h1, h2, h3, h4, label, p, [data-testid="stWidgetLabel"] p {{
+        color: #23493A !important;
+        font-family: 'Merriweather', serif;
     }}
-    
-    /* Textos secundários e rótulos dos campos (Labels das caixas) */
-    .stApp p, .stApp label, [data-testid="stWidgetLabel"] p {{
-        color: #3A3935 !important; /* Grafite suave de alta leitura */
-        font-weight: 500 !important;
-    }}
-    
-    /* Customização dos Botões de Ação Principal (Verde Assinatura da Marca) */
+
+    /* 4. BOTÕES (Verde Sólido e Reto) */
     div.stButton > button {{
         background-color: #23493A !important; 
-        color: #FFFFFF !important;
+        color: #FAF9F5 !important;
+        border-radius: 2px !important;
         border: none !important;
-        border-radius: 4px !important;
         font-weight: 600 !important;
-        padding: 10px 24px !important;
-        transition: all 0.3s ease !important;
+        width: 100%;
+        height: 50px;
     }}
-    div.stButton > button:hover {{
-        background-color: #1A372B !important;
-        box-shadow: 0px 4px 12px rgba(35, 73, 58, 0.25) !important;
-        transform: translateY(-1px);
-    }}
-    
-    /* Detalhes de Toasts (Notificações de rascunho salvo) */
-    div[data-testid="stToast"] {{
-        background-color: #23493A !important;
-        color: #FFFFFF !important;
+
+    /* 5. TABELA DE DADOS (Mais discreta) */
+    [data-testid="stTable"] {{
+        background-color: #F5F2EB;
+        border-radius: 4px;
     }}
 </style>
 """
-st.markdown(css_customizado, unsafe_allow_html=True)
+st.markdown(css_barracuda, unsafe_allow_html=True)
+# ==============================================================================
+
+Sua apresentação e o novo código estão prontos! O visual agora está em total harmonia com o site do hotel. Se precisar de mais algum ajuste fino nas colunas ou no logo, é só falar.
 
 # Configurações fixas do Hotel
 SUITES = [f"B{i}" for i in range(11, 28)]
