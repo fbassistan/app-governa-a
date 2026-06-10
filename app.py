@@ -16,54 +16,6 @@ URL_WEB_APP = "https://script.google.com/macros/s/AKfycbxtiREdyIV5xQ0HY0AE34I_yO
 URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcgGnpVEm56JhjQWztWcdAR6Q&s"
 # ==============================================================================
 
-# ==============================================================================
-# CSS BLINDADO (Visual "The Barracuda" sem quebrar o motor do celular)
-# ==============================================================================
-css_barracuda = """
-<style>
-    /* 1. FUNDO GERAL (Linen/Sand) */
-    .stApp {
-        background-color: #FAF9F5 !important;
-        background-image: none !important;
-    }
-    
-    /* 2. CORES DOS TEXTOS FIXOS E TÍTULOS (Verde Barracuda) */
-    h1, h2, h3, h4, label, p, [data-testid="stWidgetLabel"] p {
-        color: #23493A !important;
-        font-family: 'Merriweather', serif;
-    }
-
-    /* 3. BOTÃO PRINCIPAL DE AÇÃO (Adicionar à Lista) - MÁXIMO DESTAQUE */
-    div.stButton > button {
-        background-color: #23493A !important; 
-        color: #FFFFFF !important; 
-        border: 2px solid #1A372B !important; 
-        border-radius: 6px !important;
-        font-weight: 900 !important; 
-        font-size: 18px !important; 
-        text-transform: uppercase !important; 
-        letter-spacing: 1.5px !important; 
-        width: 100%;
-        height: 55px; 
-        box-shadow: 0px 4px 15px rgba(35, 73, 58, 0.2) !important; 
-        transition: all 0.2s ease !important;
-    }
-    
-    div.stButton > button:hover {
-        background-color: #1A372B !important;
-        box-shadow: 0px 6px 20px rgba(35, 73, 58, 0.35) !important;
-    }
-</style>
-"""
-st.markdown(css_barracuda, unsafe_allow_html=True)
-# ==============================================================================
-
-# Inicialização de variáveis estáveis na memória
-if 'base_time_entrada' not in st.session_state:
-    st.session_state.base_time_entrada = datetime.now().time()
-if 'base_time_saida' not in st.session_state:
-    st.session_state.base_time_saida = datetime.now().time()
-
 # Configurações fixas do Hotel
 SUITES = [f"B{i}" for i in range(11, 28)]
 SITUACOES = ["Vaga", "Ocupada", "IN", "Out", "Abert"]
@@ -87,7 +39,7 @@ if URL_LOGO:
     st.image(URL_LOGO, width=160)
 
 st.title("🧹 Monitoramento do Ciclo de Limpeza")
-st.write("Governança Inteligente — Insira os dados para sincronização com a central.")
+st.write("Governança — Insira os dados para sincronização com a central.")
 
 # IDENTIFICAÇÃO DO COLABORADOR
 nome_colaborador = st.text_input("Nome do Colaborador / Camareira:", placeholder="Ex: Maria Silva")
@@ -116,3 +68,50 @@ with st.container():
     with col1:
         suite_selecionada = st.selectbox("Selecione a Suíte:", SUITES, key=f"suite_{st.session_state.reset_counter}")
         situacao_selecionada = st.selectbox("Situação atual:", SITUACOES, key=f"situacao_{st.session_state.reset_counter}")
+
+    with col2:
+        data_selecionada = st.date_input("Data:", datetime.now(), key=f"data_{st.session_state.reset_counter}")
+        observacao = st.text_input("Observações (Opcional):", placeholder="Ex: Troca de enxoval...", key=f"obs_{st.session_state.reset_counter}")
+
+    with col3:
+        hora_entrada = st.time_input("Hora de Início:", value=datetime.now().time(), key=f"entrada_{st.session_state.reset_counter}")
+        hora_saida = st.time_input("Hora de Término:", value=datetime.now().time(), key=f"saida_{st.session_state.reset_counter}")
+
+# Botão para adicionar à lista local
+if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
+    if nome_colaborador.strip() == "":
+        st.error("Por favor, preencha o **Nome do Colaborador** antes de continuar.")
+    else:
+        try:
+            fmt = '%H:%M'
+            t_inicio = datetime.strptime(hora_entrada.strftime(fmt), fmt)
+            t_termino = datetime.strptime(hora_saida.strftime(fmt), fmt)
+            
+            delta = t_termino - t_inicio
+            segundos_totais = int(delta.total_seconds())
+            
+            if segundos_totais < 0:
+                segundos_totais += 24 * 3600
+                
+            horas, resto = divmod(segundos_totais, 3600)
+            minutos, _ = divmod(resto, 60)
+            tempo_total_str = f"{horas:02d}:{minutos:02d}"
+        except:
+            tempo_total_str = "00:00"
+
+        vaga, ocup, col_in, col_out, aber = "", "", "", "", ""
+        if situacao_selecionada == "Vaga": vaga = "X"
+        elif situacao_selecionada == "Ocupada": ocup = "X"
+        elif situacao_selecionada == "IN": col_in = "X"
+        elif situacao_selecionada == "Out": col_out = "X"
+        elif situacao_selecionada == "Abert": aber = "X"
+        
+        texto_obs = observacao.strip() if observacao.strip() != "" else "-"
+        
+        novo_registro = pd.DataFrame([{
+            "DATA": data_selecionada.strftime("%d/%m/%Y"),
+            "SUITE": suite_selecionada,
+            "VAGA": vaga,
+            "OCUP": ocup,
+            "IN": col_in,
+            "OUT": col_out,
