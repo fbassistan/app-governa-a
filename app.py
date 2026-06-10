@@ -10,16 +10,14 @@ import re
 st.set_page_config(page_title="Ciclo de Limpeza - Hotel", page_icon="🧹", layout="wide")
 
 # ==============================================================================
-# CONFIGURAÇÕES DE PERSONALIZAÇÃO (Altere aqui com os dados do seu Hotel)
+# CONFIGURAÇÕES DE PERSONALIZAÇÃO (Preservadas do seu modelo)
 # ==============================================================================
 URL_WEB_APP = "https://script.google.com/macros/s/AKfycbxtiREdyIV5xQ0HY0AE34I_yOY6j08r5-opzawg11pUzLC_VNPXzaVTst55nCktJ1SF/exec"
-
-# Cole aqui links de imagens hospedadas na internet (ex: do Imgur, do site do hotel, etc.)
-URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcgGnpVEm56JhjQWztWcdAR6Q&s" # Opcional: Cole o link da logo do seu hotel aqui (PNG transparente de preferência)
+URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcgGnpVEm56JhjQWztWcdAR6Q&s"
 # ==============================================================================
 
 # ==============================================================================
-# CSS ATUALIZADO 
+# CSS CORRIGIDO E ANTIFALHAS PARA CELULARES (Mata o bug do relógio)
 # ==============================================================================
 css_barracuda = f"""
 <style>
@@ -52,12 +50,26 @@ css_barracuda = f"""
         border-radius: 4px !important;
     }}
     
-    input, select, textarea, div[data-baseweb="select"] *, .stTimeInput input, .stDateInput input {{
+    /* Força texto branco e negrito apenas nos campos visuais seguros */
+    input, select, textarea, div[data-baseweb="select"] * {{
         color: #FFFFFF !important;
         font-weight: bold !important;
+    }}
+    
+    /* Alinhamento fino para os componentes de data e hora no celular */
+    .stTimeInput input, .stDateInput input {{
+        color: #FFFFFF !important;
+        font-weight: bold !important;
+        background-color: #23493A !important;
+        text-align: center;
+    }}
+    
+    /* PROTEÇÃO MOBILE: Impede que o Webkit suma com os números das roletas do iPhone/Android */
+    input[type="time"], input[type="date"] {{
         -webkit-text-fill-color: #FFFFFF !important;
     }}
     
+    /* Deixa as setinhas dos menus e ícones internos brancos para combinar */
     div[data-baseweb="select"] svg, div[data-baseweb="input"] svg {{
         fill: #FFFFFF !important;
         color: #FFFFFF !important;
@@ -66,20 +78,19 @@ css_barracuda = f"""
     /* 5. BOTÃO PRINCIPAL DE AÇÃO (Adicionar à Lista) - SUPER VISÍVEL */
     div.stButton > button {{
         background-color: #23493A !important; 
-        color: #FFFFFF !important; /* Branco puro */
-        border: 2px solid #1A372B !important; /* Borda firme */
+        color: #FFFFFF !important; 
+        border: 2px solid #1A372B !important; 
         border-radius: 6px !important;
-        font-weight: 900 !important; /* Negrito extra forte */
-        font-size: 18px !important; /* Letras maiores */
-        text-transform: uppercase !important; /* Força tudo em MAIÚSCULO */
-        letter-spacing: 1.5px !important; /* Espaçamento elegante entre as letras */
+        font-weight: 900 !important; 
+        font-size: 18px !important; 
+        text-transform: uppercase !important; 
+        letter-spacing: 1.5px !important; 
         width: 100%;
-        height: 55px; /* Botão mais alto e robusto */
-        box-shadow: 0px 4px 15px rgba(35, 73, 58, 0.2) !important; /* Sombra sutil para dar relevo */
+        height: 55px; 
+        box-shadow: 0px 4px 15px rgba(35, 73, 58, 0.2) !important; 
         transition: all 0.2s ease !important;
     }}
     
-    /* Efeito visual quando o botão é pressionado */
     div.stButton > button:hover {{
         background-color: #1A372B !important;
         box-shadow: 0px 6px 20px rgba(35, 73, 58, 0.35) !important;
@@ -94,7 +105,6 @@ css_barracuda = f"""
 </style>
 """
 st.markdown(css_barracuda, unsafe_allow_html=True)
-# ==============================================================================
 # ==============================================================================
 
 # Configurações fixas do Hotel
@@ -115,7 +125,7 @@ def gerar_nome_arquivo(nome):
     nome_limpo = re.sub(r'[^a-zA-Z0-9]', '_', nome.strip().lower())
     return f"rascunho_{nome_limpo}.json"
 
-# Topo do App: Exibe a Logo da Empresa se o link for preenchido
+# Topo do App: Exibe a Logo da Empresa
 if URL_LOGO:
     st.image(URL_LOGO, width=160)
 
@@ -141,7 +151,7 @@ if nome_colaborador.strip():
 
 st.write("---")
 
-# Seção de Cadastro envelopada visualmente
+# Seção de Cadastro
 with st.container():
     st.write("#### 🛏️ Registrar Nova Suíte")
     col1, col2, col3 = st.columns(3)
@@ -162,20 +172,28 @@ with st.container():
 if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
     if nome_colaborador.strip() == "":
         st.error("Por favor, preencha o **Nome do Colaborador** antes de continuar.")
+    elif hora_entrada is None or hora_saida is None:
+        st.error("Por favor, preencha os horários de Início e Término corretamente.")
     else:
-        fmt = '%H:%M'
-        t_inicio = datetime.strptime(hora_entrada.strftime(fmt), fmt)
-        t_termino = datetime.strptime(hora_saida.strftime(fmt), fmt)
-        
-        delta = t_termino - t_inicio
-        segundos_totais = int(delta.total_seconds())
-        if segundos_totais < 0:
-            segundos_totais += 24 * 3600
+        # Método antifalha usando a biblioteca nativa do Python para cálculo de tempo
+        try:
+            hoje = datetime.today()
+            t_inicio = datetime.combine(hoje, hora_entrada)
+            t_termino = datetime.combine(hoje, hora_saida)
             
-        horas, resto = divmod(segundos_totais, 3600)
-        minutos, _ = divmod(resto, 60)
-        tempo_total_str = f"{horas:02d}:{minutos:02d}"
-        
+            delta = t_termino - t_inicio
+            segundos_totais = int(delta.total_seconds())
+            
+            # Caso a limpeza vire a meia-noite
+            if segundos_totais < 0:
+                segundos_totais += 24 * 3600
+                
+            horas, resto = divmod(segundos_totais, 3600)
+            minutos, _ = divmod(resto, 60)
+            tempo_total_str = f"{horas:02d}:{minutos:02d}"
+        except Exception as err:
+            tempo_total_str = "00:00"
+
         vaga, ocup, col_in, col_out, aber = "", "", "", "", ""
         if situacao_selecionada == "Vaga": vaga = "X"
         elif situacao_selecionada == "Ocupada": ocup = "X"
@@ -193,8 +211,8 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
             "IN": col_in,
             "OUT": col_out,
             "ABER": aber,
-            "INICIO": hora_entrada.strftime("%H:%M"),
-            "TERMINO": hora_saida.strftime("%H:%M"),
+            "INICIO": hora_entrada.strftime("%H:%M") if hora_entrada else "00:00",
+            "TERMINO": hora_saida.strftime("%H:%M") if hora_saida else "00:00",
             "TOTAL": tempo_total_str,
             "COLABORADOR": nome_colaborador.strip().upper(),
             "OBSERVAÇÕES": texto_obs
@@ -233,29 +251,3 @@ if not st.session_state.limpezas_df.empty:
             if arquivo_rascunho and os.path.exists(arquivo_rascunho):
                 os.remove(arquivo_rascunho)
             st.rerun()
-            
-    with col_btn2:
-        if st.button("🚀 ENVIAR RELATÓRIO DO DIA", type="primary", use_container_width=True):
-            with st.spinner("Conectando à planilha central..."):
-                try:
-                    lista_dados = st.session_state.limpezas_df.to_dict(orient='records')
-                    
-                    req = urllib.request.Request(URL_WEB_APP, method="POST")
-                    req.add_header('Content-Type', 'application/json')
-                    payload = json.dumps(lista_dados).encode('utf-8')
-                    
-                    with urllib.request.urlopen(req, data=payload) as response:
-                        resultado = response.read().decode('utf-8')
-                    
-                    if "Error" in resultado:
-                        st.error(f"Erro na Planilha: {resultado}")
-                    else:
-                        st.balloons()
-                        st.success("🎉 Ciclos salvos e sincronizados com a planilha do hotel!")
-                        if arquivo_rascunho and os.path.exists(arquivo_rascunho):
-                            os.remove(arquivo_rascunho)
-                        st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
-                        time.sleep(2)
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Erro de conexão: {e}. Fique tranquila, seus dados continuam guardados aqui.")
