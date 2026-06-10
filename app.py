@@ -17,7 +17,7 @@ URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcg
 # ==============================================================================
 
 # ==============================================================================
-# CSS CORRIGIDO E ANTIFALHAS PARA CELULARES (Mata o bug do relógio)
+# CSS SEGURO CONTRA ERROS DE REACT (Altera cores sem quebrar a estrutura)
 # ==============================================================================
 css_barracuda = f"""
 <style>
@@ -27,55 +27,39 @@ css_barracuda = f"""
         background-image: none !important;
     }}
     
-    /* 2. REMOVE AS CAIXAS EM BRANCO INÚTEIS */
-    div[data-testid="stBlock"], .stMarkdown, div[data-testid="stForm"], div[data-testid="stExpander"] {{
-        background-color: transparent !important;
-        padding: 5px !important;
-        border-radius: 0px !important;
-        box-shadow: none !important;
-        border: none !important;
-        margin-bottom: 0px !important;
-    }}
-    
-    /* 3. CORES DOS TEXTOS FIXOS E TÍTULOS */
+    /* 2. CORES DOS TEXTOS FIXOS E TÍTULOS (Verde Barracuda) */
     h1, h2, h3, h4, label, p, [data-testid="stWidgetLabel"] p {{
         color: #23493A !important;
         font-family: 'Merriweather', serif;
     }}
 
-    /* 4. CAIXAS DE RESPOSTA (Onde preenchemos os dados) */
-    div[data-baseweb="input"], div[data-baseweb="select"], .stTimeInput input, .stDateInput input, input {{
+    /* 3. CAIXAS DE INTERAÇÃO (Fundo Verde, Letra Branca e Negrito) */
+    /* Mudamos apenas a cor e o fundo, sem alterar paddings ou margens estruturais */
+    input, select, textarea, div[data-baseweb="select"], div[data-baseweb="input"] {{
         background-color: #23493A !important;
         border: 1px solid #1A372B !important;
         border-radius: 4px !important;
     }}
     
-    /* Força texto branco e negrito apenas nos campos visuais seguros */
-    input, select, textarea, div[data-baseweb="select"] * {{
+    /* Força a cor do texto digitado para Branco e Negrito */
+    input, select, textarea, div[data-baseweb="select"] *, .stTimeInput input, .stDateInput input {{
         color: #FFFFFF !important;
         font-weight: bold !important;
+        -webkit-text-fill-color: #FFFFFF !important; /* Estabilidade em iPhones */
     }}
     
-    /* Alinhamento fino para os componentes de data e hora no celular */
-    .stTimeInput input, .stDateInput input {{
-        color: #FFFFFF !important;
-        font-weight: bold !important;
+    /* Ajuste para garantir fundo verde consistente dentro dos seletores nativos */
+    div[data-baseweb="input"] input, .stTimeInput input, .stDateInput input {{
         background-color: #23493A !important;
-        text-align: center;
     }}
     
-    /* PROTEÇÃO MOBILE: Impede que o Webkit suma com os números das roletas do iPhone/Android */
-    input[type="time"], input[type="date"] {{
-        -webkit-text-fill-color: #FFFFFF !important;
-    }}
-    
-    /* Deixa as setinhas dos menus e ícones internos brancos para combinar */
-    div[data-baseweb="select"] svg, div[data-baseweb="input"] svg {{
+    /* Ícones, vetores e setas internas das caixas em branco */
+    svg, [data-testid="stWidgetLabel"] svg {{
         fill: #FFFFFF !important;
         color: #FFFFFF !important;
     }}
 
-    /* 5. BOTÃO PRINCIPAL DE AÇÃO (Adicionar à Lista) - SUPER VISÍVEL */
+    /* 4. BOTÃO PRINCIPAL DE AÇÃO (Adicionar à Lista) - MÁXIMO DESTAQUE */
     div.stButton > button {{
         background-color: #23493A !important; 
         color: #FFFFFF !important; 
@@ -94,13 +78,6 @@ css_barracuda = f"""
     div.stButton > button:hover {{
         background-color: #1A372B !important;
         box-shadow: 0px 6px 20px rgba(35, 73, 58, 0.35) !important;
-        transform: translateY(-1px);
-    }}
-    
-    /* 6. TABELA DE CONFERÊNCIA */
-    [data-testid="stTable"] {{
-        background-color: #F5F2EB;
-        border-radius: 4px;
     }}
 </style>
 """
@@ -175,7 +152,6 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
     elif hora_entrada is None or hora_saida is None:
         st.error("Por favor, preencha os horários de Início e Término corretamente.")
     else:
-        # Método antifalha usando a biblioteca nativa do Python para cálculo de tempo
         try:
             hoje = datetime.today()
             t_inicio = datetime.combine(hoje, hora_entrada)
@@ -184,14 +160,13 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
             delta = t_termino - t_inicio
             segundos_totais = int(delta.total_seconds())
             
-            # Caso a limpeza vire a meia-noite
             if segundos_totais < 0:
                 segundos_totais += 24 * 3600
                 
             horas, resto = divmod(segundos_totais, 3600)
             minutos, _ = divmod(resto, 60)
             tempo_total_str = f"{horas:02d}:{minutos:02d}"
-        except Exception as err:
+        except:
             tempo_total_str = "00:00"
 
         vaga, ocup, col_in, col_out, aber = "", "", "", "", ""
@@ -251,3 +226,29 @@ if not st.session_state.limpezas_df.empty:
             if arquivo_rascunho and os.path.exists(arquivo_rascunho):
                 os.remove(arquivo_rascunho)
             st.rerun()
+            
+    with col_btn2:
+        if st.button("🚀 ENVIAR RELATÓRIO DO DIA", type="primary", use_container_width=True):
+            with st.spinner("Conectando à planilha central..."):
+                try:
+                    lista_dados = st.session_state.limpezas_df.to_dict(orient='records')
+                    
+                    req = urllib.request.Request(URL_WEB_APP, method="POST")
+                    req.add_header('Content-Type', 'application/json')
+                    payload = json.dumps(lista_dados).encode('utf-8')
+                    
+                    with urllib.request.urlopen(req, data=payload) as response:
+                        resultado = response.read().decode('utf-8')
+                    
+                    if "Error" in resultado:
+                        st.error(f"Erro na Planilha: {resultado}")
+                    else:
+                        st.balloons()
+                        st.success("🎉 Ciclos salvos e sincronizados com a planilha do hotel!")
+                        if arquivo_rascunho and os.path.exists(arquivo_rascunho):
+                            os.remove(arquivo_rascunho)
+                        st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
+                        time.sleep(2)
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erro de conexão: {e}. Fique tranquila, seus dados continuam guardados aqui.")
