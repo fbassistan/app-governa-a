@@ -15,7 +15,6 @@ st.set_page_config(page_title="Ciclo de Limpeza - Hotel", page_icon="🧹", layo
 URL_WEB_APP = "https://script.google.com/macros/s/AKfycbxtiREdyIV5xQ0HY0AE34I_yOY6j08r5-opzawg11pUzLC_VNPXzaVTst55nCktJ1SF/exec"
 
 # Cole aqui links de imagens hospedadas na internet (ex: do Imgur, do site do hotel, etc.)
-URL_FUNDO = "https://www.thebarracuda.com.br/dados/galeria-bhv/full/8.jpg" # Foto padrão de hotel luxuoso
 URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcgGnpVEm56JhjQWztWcdAR6Q&s" # Opcional: Cole o link da logo do seu hotel aqui (PNG transparente de preferência)
 # ==============================================================================
 
@@ -24,7 +23,7 @@ css_customizado = f"""
 <style>
     /* Fundo do aplicativo com uma película suave que remete à areia natural e linho */
     .stApp {{
-        background-image: linear-gradient(rgba(245, 242, 235, 0.4), rgba(245, 242, 235, 0.4)), url("{URL_FUNDO}");
+        
         background-attachment: fixed;
         background-size: cover;
         background-position: center;
