@@ -17,7 +17,7 @@ URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcg
 # ==============================================================================
 
 # ==============================================================================
-# CSS SEGURO CONTRA ERROS DE REACT (Altera cores sem quebrar a estrutura)
+# CSS ULTRA SEGURO (Muda apenas cores e fontes, sem mexer na estrutura do app)
 # ==============================================================================
 css_barracuda = f"""
 <style>
@@ -33,27 +33,25 @@ css_barracuda = f"""
         font-family: 'Merriweather', serif;
     }}
 
-    /* 3. CAIXAS DE INTERAÇÃO (Fundo Verde, Letra Branca e Negrito) */
-    /* Mudamos apenas a cor e o fundo, sem alterar paddings ou margens estruturais */
-    input, select, textarea, div[data-baseweb="select"], div[data-baseweb="input"] {{
+    /* 3. CAIXAS DE RESPOSTA ESPECÍFICAS (Fundo Verde, Letra Branca e Negrito) */
+    /* Target focado apenas nos elementos de texto puros, sem tocar nas estruturas invisíveis */
+    input, textarea, select {{
         background-color: #23493A !important;
-        border: 1px solid #1A372B !important;
-        border-radius: 4px !important;
-    }}
-    
-    /* Força a cor do texto digitado para Branco e Negrito */
-    input, select, textarea, div[data-baseweb="select"] *, .stTimeInput input, .stDateInput input {{
         color: #FFFFFF !important;
         font-weight: bold !important;
-        -webkit-text-fill-color: #FFFFFF !important; /* Estabilidade em iPhones */
+        border: 1px solid #1A372B !important;
+        border-radius: 4px !important;
+        -webkit-text-fill-color: #FFFFFF !important; /* Estabilidade total em iPhones */
     }}
     
-    /* Ajuste para garantir fundo verde consistente dentro dos seletores nativos */
-    div[data-baseweb="input"] input, .stTimeInput input, .stDateInput input {{
+    /* Garante a cor branca e negrito no texto selecionado do menu de escolha (Selectbox) */
+    div[data-testid="stSelectbox"] div[role="button"] {{
         background-color: #23493A !important;
+        color: #FFFFFF !important;
+        font-weight: bold !important;
     }}
     
-    /* Ícones, vetores e setas internas das caixas em branco */
+    /* Mantém os ícones internos (como o calendário e setas) visíveis em branco */
     svg, [data-testid="stWidgetLabel"] svg {{
         fill: #FFFFFF !important;
         color: #FFFFFF !important;
