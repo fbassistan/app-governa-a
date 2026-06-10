@@ -19,7 +19,7 @@ URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcg
 # ==============================================================================
 
 # ==============================================================================
-# CSS ATUALIZADO - BOTÃO DE ENVIO COM MÁXIMO DESTAQUE E VISIBILIDADE
+# CSS ATUALIZADO 
 # ==============================================================================
 css_barracuda = f"""
 <style>
