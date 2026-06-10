@@ -19,7 +19,7 @@ URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcg
 # ==============================================================================
 
 # ==============================================================================
-# CSS ATUALIZADO - CAIXAS DE INTERAÇÃO EM VERDE COM LETRAS BRANCAS EM NEGRITO
+# CSS ATUALIZADO - BOTÃO DE ENVIO COM MÁXIMO DESTAQUE E VISIBILIDADE
 # ==============================================================================
 css_barracuda = f"""
 <style>
@@ -29,7 +29,7 @@ css_barracuda = f"""
         background-image: none !important;
     }}
     
-    /* 2. REMOVE AS CAIXAS EM BRANCO INÚTEIS (Interface limpa) */
+    /* 2. REMOVE AS CAIXAS EM BRANCO INÚTEIS */
     div[data-testid="stBlock"], .stMarkdown, div[data-testid="stForm"], div[data-testid="stExpander"] {{
         background-color: transparent !important;
         padding: 5px !important;
@@ -39,46 +39,51 @@ css_barracuda = f"""
         margin-bottom: 0px !important;
     }}
     
-    /* 3. CORES DOS TEXTOS FIXOS E TÍTULOS (Verde Barracuda) */
+    /* 3. CORES DOS TEXTOS FIXOS E TÍTULOS */
     h1, h2, h3, h4, label, p, [data-testid="stWidgetLabel"] p {{
         color: #23493A !important;
         font-family: 'Merriweather', serif;
     }}
 
     /* 4. CAIXAS DE RESPOSTA (Onde preenchemos os dados) */
-    /* Aplica o Verde Barracuda no fundo das caixas de texto, seleção, data e hora */
     div[data-baseweb="input"], div[data-baseweb="select"], .stTimeInput input, .stDateInput input, input {{
         background-color: #23493A !important;
         border: 1px solid #1A372B !important;
         border-radius: 4px !important;
     }}
     
-    /* Força estritamente que as letras digitadas ou selecionadas fiquem BRANCAS e em NEGRITO */
     input, select, textarea, div[data-baseweb="select"] *, .stTimeInput input, .stDateInput input {{
         color: #FFFFFF !important;
         font-weight: bold !important;
-        -webkit-text-fill-color: #FFFFFF !important; /* Garante compatibilidade com iPhones */
+        -webkit-text-fill-color: #FFFFFF !important;
     }}
     
-    /* Deixa as setinhas dos menus e ícones internos brancos para combinar */
     div[data-baseweb="select"] svg, div[data-baseweb="input"] svg {{
         fill: #FFFFFF !important;
         color: #FFFFFF !important;
     }}
 
-    /* 5. BOTÕES DE ENVIO/AÇÃO (Onde clicamos para enviar) */
+    /* 5. BOTÃO PRINCIPAL DE AÇÃO (Adicionar à Lista) - SUPER VISÍVEL */
     div.stButton > button {{
         background-color: #23493A !important; 
-        color: #FAF9F5 !important;
-        border-radius: 4px !important;
-        border: none !important;
-        font-weight: bold !important;
+        color: #FFFFFF !important; /* Branco puro */
+        border: 2px solid #1A372B !important; /* Borda firme */
+        border-radius: 6px !important;
+        font-weight: 900 !important; /* Negrito extra forte */
+        font-size: 18px !important; /* Letras maiores */
+        text-transform: uppercase !important; /* Força tudo em MAIÚSCULO */
+        letter-spacing: 1.5px !important; /* Espaçamento elegante entre as letras */
         width: 100%;
-        height: 50px;
+        height: 55px; /* Botão mais alto e robusto */
+        box-shadow: 0px 4px 15px rgba(35, 73, 58, 0.2) !important; /* Sombra sutil para dar relevo */
+        transition: all 0.2s ease !important;
     }}
+    
+    /* Efeito visual quando o botão é pressionado */
     div.stButton > button:hover {{
         background-color: #1A372B !important;
-        box-shadow: 0px 4px 12px rgba(35, 73, 58, 0.2) !important;
+        box-shadow: 0px 6px 20px rgba(35, 73, 58, 0.35) !important;
+        transform: translateY(-1px);
     }}
     
     /* 6. TABELA DE CONFERÊNCIA */
@@ -89,6 +94,7 @@ css_barracuda = f"""
 </style>
 """
 st.markdown(css_barracuda, unsafe_allow_html=True)
+# ==============================================================================
 # ==============================================================================
 
 # Configurações fixas do Hotel
