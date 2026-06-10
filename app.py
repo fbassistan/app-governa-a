@@ -108,10 +108,80 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
         
         texto_obs = observacao.strip() if observacao.strip() != "" else "-"
         
-        novo_registro = pd.DataFrame([{
+        # Criação isolada e segura do dicionário (Imune a erros de colagem)
+        dados_linha = {
             "DATA": data_selecionada.strftime("%d/%m/%Y"),
             "SUITE": suite_selecionada,
             "VAGA": vaga,
             "OCUP": ocup,
             "IN": col_in,
             "OUT": col_out,
+            "ABER": aber,
+            "INICIO": hora_entrada.strftime("%H:%M") if hora_entrada else "00:00",
+            "TERMINO": hora_saida.strftime("%H:%M") if hora_saida else "00:00",
+            "TOTAL": tempo_total_str,
+            "COLABORADOR": nome_colaborador.strip().upper(),
+            "OBSERVAÇÕES": texto_obs
+        }
+        
+        novo_registro = pd.DataFrame([dados_linha])
+        
+        st.session_state.limpezas_df = pd.concat([st.session_state.limpezas_df, novo_registro], ignore_index=True)
+        
+        if arquivo_rascunho:
+            with open(arquivo_rascunho, "w", encoding="utf-8") as f:
+                json.dump(st.session_state.limpezas_df.to_dict(orient='records'), f, ensure_ascii=False, indent=2)
+        
+        st.success(f"Suíte {suite_selecionada} adicionada e salva no rascunho!")
+        st.session_state.reset_counter += 1
+        time.sleep(0.4)
+        st.rerun()
+
+# Se houver dados na lista, mostra o gerenciador
+if not st.session_state.limpezas_df.empty:
+    st.write("---")
+    st.write("### 📋 Registros salvos no celular (Prontos para envio)")
+    
+    st.session_state.limpezas_df = st.data_editor(
+        st.session_state.limpezas_df,
+        use_container_width=True,
+        num_rows="dynamic"
+    )
+    
+    if arquivo_rascunho and not st.session_state.limpezas_df.empty:
+        with open(arquivo_rascunho, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.limpezas_df.to_dict(orient='records'), f, ensure_ascii=False, indent=2)
+
+    col_btn1, col_btn2 = st.columns([1, 3])
+    with col_btn1:
+        if st.button("🗑️ Limpar Tudo", type="secondary", use_container_width=True):
+            st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
+            if arquivo_rascunho and os.path.exists(arquivo_rascunho):
+                os.remove(arquivo_rascunho)
+            st.rerun()
+            
+    with col_btn2:
+        if st.button("🚀 ENVIAR RELATÓRIO DO DIA", type="primary", use_container_width=True):
+            with st.spinner("Conectando à planilha central..."):
+                try:
+                    lista_dados = st.session_state.limpezas_df.to_dict(orient='records')
+                    
+                    req = urllib.request.Request(URL_WEB_APP, method="POST")
+                    req.add_header('Content-Type', 'application/json')
+                    payload = json.dumps(lista_dados).encode('utf-8')
+                    
+                    with urllib.request.urlopen(req, data=payload) as response:
+                        resultado = response.read().decode('utf-8')
+                    
+                    if "Error" in resultado:
+                        st.error(f"Erro na Planilha: {resultado}")
+                    else:
+                        st.balloons()
+                        st.success("🎉 Ciclos salvos e sincronizados com a planilha do hotel!")
+                        if arquivo_rascunho and os.path.exists(arquivo_rascunho):
+                            os.remove(arquivo_rascunho)
+                        st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
+                        time.sleep(2)
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erro de conexão: {e}. Fique tranquila, seus dados continuam guardados aqui.")
