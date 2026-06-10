@@ -19,44 +19,69 @@ URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcg
 # ==============================================================================
 
 # ==============================================================================
-# CSS DEFINITIVO - ESTILO THE BARRACUDA (Areia & Verde)
+# CSS ATUALIZADO - CAIXAS DE INTERAÇÃO EM VERDE COM LETRAS BRANCAS EM NEGRITO
 # ==============================================================================
 css_barracuda = f"""
 <style>
-    /* 1. FUNDO GERAL (Linen/Sand) - Removemos a imagem e deixamos liso e limpo */
+    /* 1. FUNDO GERAL (Linen/Sand) */
     .stApp {{
         background-color: #FAF9F5 !important;
         background-image: none !important;
     }}
     
-    /* 2. REMOVE AS CAIXAS EM BRANCO (Deixa a interface flat) */
+    /* 2. REMOVE AS CAIXAS EM BRANCO INÚTEIS (Interface limpa) */
     div[data-testid="stBlock"], .stMarkdown, div[data-testid="stForm"], div[data-testid="stExpander"] {{
         background-color: transparent !important;
-        padding: 10px !important;
+        padding: 5px !important;
         border-radius: 0px !important;
         box-shadow: none !important;
         border: none !important;
         margin-bottom: 0px !important;
     }}
     
-    /* 3. CORES DOS TEXTOS (Verde Barracuda) */
+    /* 3. CORES DOS TEXTOS FIXOS E TÍTULOS (Verde Barracuda) */
     h1, h2, h3, h4, label, p, [data-testid="stWidgetLabel"] p {{
         color: #23493A !important;
         font-family: 'Merriweather', serif;
     }}
 
-    /* 4. BOTÕES (Verde Sólido e Reto) */
+    /* 4. CAIXAS DE RESPOSTA (Onde preenchemos os dados) */
+    /* Aplica o Verde Barracuda no fundo das caixas de texto, seleção, data e hora */
+    div[data-baseweb="input"], div[data-baseweb="select"], .stTimeInput input, .stDateInput input, input {{
+        background-color: #23493A !important;
+        border: 1px solid #1A372B !important;
+        border-radius: 4px !important;
+    }}
+    
+    /* Força estritamente que as letras digitadas ou selecionadas fiquem BRANCAS e em NEGRITO */
+    input, select, textarea, div[data-baseweb="select"] *, .stTimeInput input, .stDateInput input {{
+        color: #FFFFFF !important;
+        font-weight: bold !important;
+        -webkit-text-fill-color: #FFFFFF !important; /* Garante compatibilidade com iPhones */
+    }}
+    
+    /* Deixa as setinhas dos menus e ícones internos brancos para combinar */
+    div[data-baseweb="select"] svg, div[data-baseweb="input"] svg {{
+        fill: #FFFFFF !important;
+        color: #FFFFFF !important;
+    }}
+
+    /* 5. BOTÕES DE ENVIO/AÇÃO (Onde clicamos para enviar) */
     div.stButton > button {{
         background-color: #23493A !important; 
         color: #FAF9F5 !important;
-        border-radius: 2px !important;
+        border-radius: 4px !important;
         border: none !important;
-        font-weight: 600 !important;
+        font-weight: bold !important;
         width: 100%;
         height: 50px;
     }}
-
-    /* 5. TABELA DE DADOS (Mais discreta) */
+    div.stButton > button:hover {{
+        background-color: #1A372B !important;
+        box-shadow: 0px 4px 12px rgba(35, 73, 58, 0.2) !important;
+    }}
+    
+    /* 6. TABELA DE CONFERÊNCIA */
     [data-testid="stTable"] {{
         background-color: #F5F2EB;
         border-radius: 4px;
@@ -64,6 +89,7 @@ css_barracuda = f"""
 </style>
 """
 st.markdown(css_barracuda, unsafe_allow_html=True)
+# ==============================================================================
 
 # Configurações fixas do Hotel
 SUITES = [f"B{i}" for i in range(11, 28)]
