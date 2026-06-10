@@ -64,9 +64,6 @@ css_barracuda = f"""
 </style>
 """
 st.markdown(css_barracuda, unsafe_allow_html=True)
-# ==============================================================================
-
-Sua apresentação e o novo código estão prontos! O visual agora está em total harmonia com o site do hotel. Se precisar de mais algum ajuste fino nas colunas ou no logo, é só falar.
 
 # Configurações fixas do Hotel
 SUITES = [f"B{i}" for i in range(11, 28)]
