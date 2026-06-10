@@ -17,25 +17,25 @@ URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcg
 # ==============================================================================
 
 # ==============================================================================
-# CSS ULTRA SEGURO (Muda apenas cores e fontes, sem mexer na estrutura do app)
+# CSS ULTRA SEGURO (Altera cores sem quebrar os seletores do React)
 # ==============================================================================
-css_barracuda = f"""
+css_barracuda = """
 <style>
     /* 1. FUNDO GERAL (Linen/Sand) */
-    .stApp {{
+    .stApp {
         background-color: #FAF9F5 !important;
         background-image: none !important;
-    }}
+    }
     
     /* 2. CORES DOS TEXTOS FIXOS E TÍTULOS (Verde Barracuda) */
-    h1, h2, h3, h4, label, p, [data-testid="stWidgetLabel"] p {{
+    h1, h2, h3, h4, label, p, [data-testid="stWidgetLabel"] p {
         color: #23493A !important;
         font-family: 'Merriweather', serif;
-    }}
+    }
 
-    /* 3. CAIXAS DE RESPOSTA ESPECÍFICAS (Fundo Verde, Letra Branca e Negrito) */
-    /* Target focado apenas nos elementos de texto puros, sem tocar nas estruturas invisíveis */
-    input, textarea, select {{
+    /* 3. CAIXAS DE INTERAÇÃO (Fundo Verde, Letra Branca e Negrito) */
+    /* Target cirúrgico nas classes do Streamlit, sem quebrar os containers internos */
+    .stTextInput input, .stTextArea textarea, .stSelectbox div[role="button"], .stTimeInput input, .stDateInput input {
         background-color: #23493A !important;
         color: #FFFFFF !important;
         font-weight: bold !important;
@@ -44,21 +44,14 @@ css_barracuda = f"""
         -webkit-text-fill-color: #FFFFFF !important; /* Estabilidade total em iPhones */
     }}
     
-    /* Garante a cor branca e negrito no texto selecionado do menu de escolha (Selectbox) */
-    div[data-testid="stSelectbox"] div[role="button"] {{
-        background-color: #23493A !important;
-        color: #FFFFFF !important;
-        font-weight: bold !important;
-    }}
-    
     /* Mantém os ícones internos (como o calendário e setas) visíveis em branco */
-    svg, [data-testid="stWidgetLabel"] svg {{
+    svg, [data-testid="stWidgetLabel"] svg {
         fill: #FFFFFF !important;
         color: #FFFFFF !important;
-    }}
+    }
 
     /* 4. BOTÃO PRINCIPAL DE AÇÃO (Adicionar à Lista) - MÁXIMO DESTAQUE */
-    div.stButton > button {{
+    div.stButton > button {
         background-color: #23493A !important; 
         color: #FFFFFF !important; 
         border: 2px solid #1A372B !important; 
@@ -71,16 +64,22 @@ css_barracuda = f"""
         height: 55px; 
         box-shadow: 0px 4px 15px rgba(35, 73, 58, 0.2) !important; 
         transition: all 0.2s ease !important;
-    }}
+    }
     
-    div.stButton > button:hover {{
+    div.stButton > button:hover {
         background-color: #1A372B !important;
         box-shadow: 0px 6px 20px rgba(35, 73, 58, 0.35) !important;
-    }}
+    }
 </style>
 """
 st.markdown(css_barracuda, unsafe_allow_html=True)
 # ==============================================================================
+
+# CONGELAMENTO DOS HORÁRIOS: Evita que a hora fique mudando sozinha a cada renderização na tela do celular
+if 'base_time_entrada' not in st.session_state:
+    st.session_state.base_time_entrada = datetime.now().time()
+if 'base_time_saida' not in st.session_state:
+    st.session_state.base_time_saida = datetime.now().time()
 
 # Configurações fixas do Hotel
 SUITES = [f"B{i}" for i in range(11, 28)]
@@ -136,12 +135,13 @@ with st.container():
         situacao_selecionada = st.selectbox("Situação atual:", SITUACOES, key=f"situacao_{st.session_state.reset_counter}")
 
     with col2:
-        data_selecionada = st.date_input("Data:", datetime.now(), key=f"data_{st.session_state.reset_counter}")
+        data_selecionada = st.date_input("Data:", datetime.now().date(), key=f"data_{st.session_state.reset_counter}")
         observacao = st.text_input("Observações (Opcional):", placeholder="Ex: Troca de enxoval...", key=f"obs_{st.session_state.reset_counter}")
 
     with col3:
-        hora_entrada = st.time_input("Hora de Início:", value=datetime.now().time(), key=f"entrada_{st.session_state.reset_counter}")
-        hora_saida = st.time_input("Hora de Término:", value=datetime.now().time(), key=f"saida_{st.session_state.reset_counter}")
+        # Passa o valor congelado e estável para os inputs de horário
+        hora_entrada = st.time_input("Hora de Início:", value=st.session_state.base_time_entrada, key=f"entrada_{st.session_state.reset_counter}")
+        hora_saida = st.time_input("Hora de Término:", value=st.session_state.base_time_saida, key=f"saida_{st.session_state.reset_counter}")
 
 # Botão para adicionar à lista local
 if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
@@ -198,24 +198,34 @@ if st.button("➕ Adicionar à Lista de Envio", use_container_width=True):
                 json.dump(st.session_state.limpezas_df.to_dict(orient='records'), f, ensure_ascii=False, indent=2)
         
         st.success(f"Suíte {suite_selecionada} adicionada e salva no rascunho!")
+        
+        # Renova o congelamento de horário para o próximo registro
+        st.session_state.base_time_entrada = datetime.now().time()
+        st.session_state.base_time_saida = datetime.now().time()
+        
         st.session_state.reset_counter += 1
         time.sleep(0.4)
         st.rerun()
 
-# Se houver dados na lista, mostra o gerenciador
+# Se houver dados na lista, mostra o gerenciador de forma isolada e segura
 if not st.session_state.limpezas_df.empty:
     st.write("---")
     st.write("### 📋 Registros salvos no celular (Prontos para envio)")
     
-    st.session_state.limpezas_df = st.data_editor(
+    # Armazena as edições em uma variável temporária para evitar loops circulares no React
+    dados_editados = st.data_editor(
         st.session_state.limpezas_df,
         use_container_width=True,
-        num_rows="dynamic"
+        num_rows="dynamic",
+        key="visualizador_tabela_limpeza"
     )
     
-    if arquivo_rascunho and not st.session_state.limpezas_df.empty:
-        with open(arquivo_rascunho, "w", encoding="utf-8") as f:
-            json.dump(st.session_state.limpezas_df.to_dict(orient='records'), f, ensure_ascii=False, indent=2)
+    # Só processa a gravação se houver uma mudança real feita pelo usuário na tabela
+    if not dados_editados.equals(st.session_state.limpezas_df):
+        st.session_state.limpezas_df = dados_editados
+        if arquivo_rascunho:
+            with open(arquivo_rascunho, "w", encoding="utf-8") as f:
+                json.dump(dados_editados.to_dict(orient='records'), f, ensure_ascii=False, indent=2)
 
     col_btn1, col_btn2 = st.columns([1, 3])
     with col_btn1:
@@ -229,24 +239,4 @@ if not st.session_state.limpezas_df.empty:
         if st.button("🚀 ENVIAR RELATÓRIO DO DIA", type="primary", use_container_width=True):
             with st.spinner("Conectando à planilha central..."):
                 try:
-                    lista_dados = st.session_state.limpezas_df.to_dict(orient='records')
-                    
-                    req = urllib.request.Request(URL_WEB_APP, method="POST")
-                    req.add_header('Content-Type', 'application/json')
-                    payload = json.dumps(lista_dados).encode('utf-8')
-                    
-                    with urllib.request.urlopen(req, data=payload) as response:
-                        resultado = response.read().decode('utf-8')
-                    
-                    if "Error" in resultado:
-                        st.error(f"Erro na Planilha: {resultado}")
-                    else:
-                        st.balloons()
-                        st.success("🎉 Ciclos salvos e sincronizados com a planilha do hotel!")
-                        if arquivo_rascunho and os.path.exists(arquivo_rascunho):
-                            os.remove(arquivo_rascunho)
-                        st.session_state.limpezas_df = pd.DataFrame(columns=COLUNAS_MODELO)
-                        time.sleep(2)
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Erro de conexão: {e}. Fique tranquila, seus dados continuam guardados aqui.")
+                    lista_dados = st.session_state.limpezas_df
