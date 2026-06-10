@@ -19,29 +19,39 @@ URL_FUNDO = "https://www.thebarracuda.com.br/dados/galeria-bhv/full/8.jpg" # Fot
 URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcgGnpVEm56JhjQWztWcdAR6Q&s" # Opcional: Cole o link da logo do seu hotel aqui (PNG transparente de preferência)
 # ==============================================================================
 
-# Injeção de CSS Customizado para o Fundo e Estilização Geral
+# Injeção de CSS Customizado - Versão Foto Marcante e Nítida
 css_customizado = f"""
 <style>
-    /* Configura a foto de fundo com uma película branca transparente (0.85) para dar leitura */
+    /* Configura a foto de fundo MUITO mais nítida (apenas 30% de película branca) */
     .stApp {{
-        background-image: linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)), url("{URL_FUNDO}");
+        background-image: linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)), url("{URL_FUNDO}");
         background-attachment: fixed;
         background-size: cover;
         background-position: center;
     }}
     
-    /* Deixa os blocos de entrada de dados mais modernos e destacados */
-    div[data-testid="stBlock"] {{
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+    /* Protege o texto: deixa os blocos de dados totalmente opacos e destacados */
+    div[data-testid="stBlock"], .stMarkdown, div[data-testid="stForm"] {{
+        background-color: rgba(255, 255, 255, 0.95) !important; /* Branco quase 100% para dar leitura */
+        padding: 20px !important;
+        border-radius: 12px !important;
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15) !important;
+        margin-bottom: 15px !important;
     }}
     
-    /* Estilização do título principal */
+    /* Deixa o título principal ainda mais forte e destacado */
     h1 {{
-        color: #1E3A8A !important; /* Azul escuro corporativo */
-        font-weight: 700;
+        color: #FFFFFF !important; /* Texto do título em Branco para contrastar com o fundo */
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Sombra preta atrás do título */
+        font-weight: 800 !important;
+        background: none !important;
+        box-shadow: none !important;
+    }}
+    
+    /* Ajuste para que pequenos textos soltos na tela fiquem brancos com sombra */
+    .stApp p {{
+        color: #FFFFFF !important;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
     }}
 </style>
 """
