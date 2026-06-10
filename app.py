@@ -19,39 +19,62 @@ URL_FUNDO = "https://www.thebarracuda.com.br/dados/galeria-bhv/full/8.jpg" # Fot
 URL_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCoWtXmWKvlUcgGnpVEm56JhjQWztWcdAR6Q&s" # Opcional: Cole o link da logo do seu hotel aqui (PNG transparente de preferência)
 # ==============================================================================
 
-# Injeção de CSS Customizado - Versão Foto Marcante e Nítida
+# Injeção de CSS Customizado - Paleta de Cores Oficial "The Barracuda"
 css_customizado = f"""
 <style>
-    /* Configura a foto de fundo MUITO mais nítida (apenas 30% de película branca) */
+    /* Fundo do aplicativo com uma película suave que remete à areia natural e linho */
     .stApp {{
-        background-image: linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)), url("{URL_FUNDO}");
+        background-image: linear-gradient(rgba(245, 242, 235, 0.4), rgba(245, 242, 235, 0.4)), url("{URL_FUNDO}");
         background-attachment: fixed;
         background-size: cover;
         background-position: center;
+        background-color: #F5F2EB; /* Cor de segurança caso a foto demore a carregar */
     }}
     
-    /* Protege o texto: deixa os blocos de dados totalmente opacos e destacados */
-    div[data-testid="stBlock"], .stMarkdown, div[data-testid="stForm"] {{
-        background-color: rgba(255, 255, 255, 0.95) !important; /* Branco quase 100% para dar leitura */
-        padding: 20px !important;
-        border-radius: 12px !important;
-        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15) !important;
-        margin-bottom: 15px !important;
+    /* Blocos de Dados: Minimalismo Sofisticado (Fundo Off-White firme com friso lateral) */
+    div[data-testid="stBlock"], .stMarkdown, div[data-testid="stForm"], div[data-testid="stExpander"] {{
+        background-color: #FAF9F5 !important; /* Tom Areia Suave */
+        padding: 24px !important;
+        border-radius: 6px !important;
+        border-left: 5px solid #23493A !important; /* Friso elegante em Verde Barracuda na lateral */
+        box-shadow: 0px 6px 20px rgba(35, 73, 58, 0.08) !important;
+        margin-bottom: 18px !important;
     }}
     
-    /* Deixa o título principal ainda mais forte e destacado */
-    h1 {{
-        color: #FFFFFF !important; /* Texto do título em Branco para contrastar com o fundo */
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Sombra preta atrás do título */
-        font-weight: 800 !important;
-        background: none !important;
-        box-shadow: none !important;
+    /* Títulos Principais: Verde Profundo da Mata Atlântica */
+    h1, h2, h3, h4 {{
+        color: #1A372B !important; 
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        font-weight: 600 !important;
+        letter-spacing: -0.5px;
     }}
     
-    /* Ajuste para que pequenos textos soltos na tela fiquem brancos com sombra */
-    .stApp p {{
+    /* Textos secundários e rótulos dos campos (Labels das caixas) */
+    .stApp p, .stApp label, [data-testid="stWidgetLabel"] p {{
+        color: #3A3935 !important; /* Grafite suave de alta leitura */
+        font-weight: 500 !important;
+    }}
+    
+    /* Customização dos Botões de Ação Principal (Verde Assinatura da Marca) */
+    div.stButton > button {{
+        background-color: #23493A !important; 
         color: #FFFFFF !important;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+        border: none !important;
+        border-radius: 4px !important;
+        font-weight: 600 !important;
+        padding: 10px 24px !important;
+        transition: all 0.3s ease !important;
+    }}
+    div.stButton > button:hover {{
+        background-color: #1A372B !important;
+        box-shadow: 0px 4px 12px rgba(35, 73, 58, 0.25) !important;
+        transform: translateY(-1px);
+    }}
+    
+    /* Detalhes de Toasts (Notificações de rascunho salvo) */
+    div[data-testid="stToast"] {{
+        background-color: #23493A !important;
+        color: #FFFFFF !important;
     }}
 </style>
 """
